@@ -7,6 +7,7 @@
 <!-- Copyright 1998-2017 by Northwoods Software Corporation. -->
 <meta charset="UTF-8">
 <script src="./lib/go.js"></script>
+<script src="./lib/roundedRectangle.js"></script>
 <script id="code">
   function init() {
     if (window.goSamples) goSamples();  // init for these samples -- you don't need to call this
@@ -83,6 +84,9 @@
           },
           new go.Binding("text").makeTwoWay())
       );
+
+
+    //myDiagram.nodeTemplateMap.add("detail2",detail2);
     // a selected node shows an Adornment that includes both a blue border
     // and a row of Buttons above the node
 var adormentTemp=$(go.Adornment, "Spot",{alignment: new go.Spot(0.5, 1)},
@@ -93,15 +97,6 @@ var adormentTemp=$(go.Adornment, "Spot",{alignment: new go.Spot(0.5, 1)},
        
         $(go.Panel, "Horizontal",
           { alignment: go.Spot.Bottom, alignmentFocus: go.Spot.Bottom },
-           $("Button",
-            { click: changeColor, "_buttonFillOver": "transparent" },  // defined below, to support changing the color of the node
-            new go.Binding("ButtonBorder.fill", "color", nextColor),
-            $(go.Panel, "Auto",
-            { alignment: go.Spot.BottomCenter},
-            $(go.Shape,   
-              { width: 18, height: 18, fill: null, stroke: "dodgerblue", strokeWidth: 3 })
-          )
-          ),
           $("Button",
             {
               actionMove: dragNewNode,  // defined below, to support dragging from the button
@@ -129,7 +124,7 @@ var adormentTemp=$(go.Adornment, "Spot",{alignment: new go.Spot(0.5, 1)},
           $("Button",
             {
               actionMove: dragNewNode,  // defined below, to support dragging from the button
-              _dragData: { category:"details",text: "a Node", color: "lightgray" },  // node data to copy
+              _dragData: { category:"details",shapeTitle: "Welcome Shape", shapeDetails: "Data is considered here", color: "lightgray" },  // node data to copy
               click: clickNewNode  // defined below, to support a click on the button
             },
             $(go.Panel, "Auto",
@@ -145,6 +140,42 @@ var adormentTemp=$(go.Adornment, "Spot",{alignment: new go.Spot(0.5, 1)},
 
     myDiagram.nodeTemplate.selectionAdornmentTemplate =adormentTemp;
 
+
+var NodeTopSize = new go.Size(150, 35);  
+var NodeBottomSize = new go.Size(150, 60); 
+
+myDiagram.nodeTemplateMap.add("details",
+        $(go.Node, "Spot",
+        { selectionAdorned: true,selectionAdornmentTemplate:adormentTemp },
+        new go.Binding("location", "loc", go.Point.parse).makeTwoWay(go.Point.stringify),
+        $(go.Panel, "Auto",
+          $(go.Shape, "RoundedRectangle",  // shown when selected
+            {strokeWidth: 3, spot1: go.Spot.TopLeft, spot2: go.Spot.BottomRight },
+            new go.Binding("stroke", "borderColor")),
+          $(go.Panel,
+            $(go.Panel, "Auto",
+              { desiredSize: NodeTopSize },
+              $(go.Shape, "RoundedTopRectangle", { fill: "white",strokeWidth:0 }, new go.Binding("fill", "shapeColor")),
+              $(go.TextBlock,{stroke: "black", font: "bold 13px Arial", editable: true}, new go.Binding("text", "shapeTitle"))
+            ),
+            $(go.Panel, "Auto",
+              { desiredSize: NodeBottomSize },
+              { position: new go.Point(0, NodeTopSize.height) },  // overlap the top side of this shape with the bottom side of the top shape
+              $(go.Shape, "RoundedBottomRectangle", { fill: "white" ,strokeWidth:0}, new go.Binding("fill", "detailsColor")),
+              $(go.TextBlock,{stroke: "black", font: "12px Segoe UI Light", editable: true}, new go.Binding("text", "shapeDetails"))
+            )
+          )
+        ),
+        // decorations..
+            $(go.Shape, "Circle",
+              { desiredSize: new go.Size(15, 15),stroke:"white", fill: "red", alignment: new go.Spot(1, 0, -2, 2), opacity: 0.0 },
+          new go.Binding("opacity", "alert", function(v) { return v ? 1.0 : 0.0; })),
+            $(go.TextBlock,
+              { stroke: "white", desiredSize: new go.Size(12, 12),font: "bold 15px Arial", editable: true, alignment: new go.Spot(1, 0, -2, 2) },
+              new go.Binding("text", "alertText"))
+      ));
+
+/*
 myDiagram.nodeTemplateMap.add("details",
         $(go.Node, "Spot",
           { selectionAdorned: true, textEditable: true, locationObjectName: "BODY" ,selectionAdornmentTemplate:adormentTemp},
@@ -154,7 +185,8 @@ myDiagram.nodeTemplateMap.add("details",
             { name: "BODY" },
             $(go.Shape, "RoundedRectangle",
               { fill: "gray", stroke: "dodgerblue", minSize: new go.Size(50, 50) },
-              new go.Binding("fill", "isSelected", function(s) { return s ? "dodgerblue" : graygrad; }).ofObject()),
+              new go.Binding("fill", "isSelected", function(s) { return s ? "dodgerblue" : graygrad; }).ofObject(),
+              new go.Binding("stroke", "borderColor"),new go.Binding("fill", "color")),
             $(go.TextBlock,
               { stroke: "black", font: "18px Segoe UI Light", editable: true, 
                 margin: new go.Margin(3, 3+11, 3, 3+4), alignment: go.Spot.Left },
@@ -168,7 +200,7 @@ myDiagram.nodeTemplateMap.add("details",
             $(go.Shape, "PlusLine",
               { width: 11, height: 11, fill: null, stroke: "dodgerblue", strokeWidth: 3 })
           )
-        ));
+        ));*/
 
     myDiagram.nodeTemplateMap.add("Circle",
         $(go.Node, "Spot",
@@ -301,13 +333,345 @@ myDiagram.nodeTemplateMap.add("details",
       }
       go.DraggingTool.prototype.doDeactivate.call(tool);  // call the base method
     };
+
     myDiagram.model = new go.GraphLinksModel(
     [
-      { key: 1, text: "Alpha", color: "white", location: "0 0" }
-    ],
-    [
-      { from: 1, to: 2 }
-    ]);
+      { key: 1, textMetaID: "3",text: "Goal: Increase Sales Value", color: "white", location: "196.15039062499994 25",namebuttonlabel: "",
+        usecasebuttonlabel: "",StatusLabel: "Active",statusid: "13",definitionMetaID: "4",
+        definition: "This is our company objective that we are trying to grow by end of 2017",nametemplateMetaID: "",
+        nametemplate: "",definitiontemplateMetaID: "",definitiontemplate: "",usecaseMetaID: "",usecase: "",usecasetemplateMetaID: "",usecasetemplate: "",alertvalueMetaID: "",
+        alertvalue: "",workbookobjectidMetaID: "",workbookobjectid: "2" },
+      { key: 2, category: "Diamond",textMetaID: "12",text: "0.2",color: "lightgray" ,loc: "-1.4210854715202004e-13 90.00000000000001",namebuttonlabel: "",usecasebuttonlabel: "",
+        StatusLabel: "Active",statusid: "13",definitionMetaID: "",definition: "",nametemplateMetaID: "",nametemplate: "",definitiontemplateMetaID: "",definitiontemplate: "",
+        usecaseMetaID: "",usecase: "",usecasetemplateMetaID: "",usecasetemplate: "",alertvalueMetaID: "",alertvalue: "0",workbookobjectidMetaID: "",workbookobjectid: "3"},
+      { key: 3 ,category: "Diamond",textMetaID: "20",text: "0.2",color: "lightgray",loc:"147.43359375 90",namebuttonlabel: " ",usecasebuttonlabel: "",
+        StatusLabel: "Active",statusid: "13",definitionMetaID: "",definition: "",nametemplateMetaID: "",nametemplate: "",definitiontemplateMetaID: "",
+        definitiontemplate: "",usecaseMetaID: "",usecase: "",usecasetemplateMetaID: "",usecasetemplate: "",alertvalueMetaID: "",alertvalue: "0",
+        workbookobjectidMetaID: "",workbookobjectid: "4"},
+        {
+        "category": "Diamond",
+        "textMetaID": "28",
+        "text": "0.2",
+        "color": "lightgray",
+        "key": 4,
+        "loc": "294.8671875 90",
+        "namebuttonlabel": "",
+        "usecasebuttonlabel": "",
+        "Status Label": "Active",
+        "statusid": "13",
+        "definitionMetaID": "",
+        "definition": "",
+        "nametemplateMetaID": "",
+        "nametemplate": "",
+        "definitiontemplateMetaID": "",
+        "definitiontemplate": "",
+        "usecaseMetaID": "",
+        "usecase": "",
+        "usecasetemplateMetaID": "",
+        "usecasetemplate": "",
+        "alertvalueMetaID": "",
+        "alertvalue": "0",
+        "workbookobjectidMetaID": "",
+        "workbookobjectid": "5"
+        },
+        {
+        "category": "details",
+        "textMetaID": "5",
+        "shapeTitle": "Customer Retention",
+        "shapeDetails": "Data is considered here",
+        "shapeColor": "lightgreen",
+        "detailsColor":"white",
+        "alert": true,
+        "alertText":"0",
+        "borderColor":"#4B0082",
+        "key": 5,
+        "loc": "7.028127032096002 187.9873046875002",
+        "namebuttonlabel": "Definition",
+        "usecasebuttonlabel": "Use Case",
+        "Status Label": "Active",
+        "statusid": "13",
+        "definitionMetaID": "6",
+        "definition": "Measure Customer Retention",
+        "nametemplateMetaID": "25",
+        "nametemplate": "FALSE",
+        "definitiontemplateMetaID": "26",
+        "definitiontemplate": "FALSE",
+        "usecaseMetaID": "7",
+        "usecase": "Use Case for customer retention",
+        "usecasetemplateMetaID": "10",
+        "usecasetemplate": "FALSE",
+        "alertvalueMetaID": "",
+        "alertvalue": "3",
+        "workbookobjectidMetaID": "",
+        "workbookobjectid": "6",
+        "borderColor":"lightgray"
+        },
+        {
+        "category": "details",
+        "textMetaID": "13",
+        "shapeTitle": "Growth",
+        "shapeDetails": "Data is considered here",
+        "shapeColor": "#fdee9b",
+        "detailsColor":"white",
+        "alert": true,
+        "key": 6,
+        "loc": "154.4617207820961 187.9873046874999",
+        "namebuttonlabel": "Definition",
+        "usecasebuttonlabel": "Use Case",
+        "Status Label": "Active",
+        "statusid": "13",
+        "definitionMetaID": "14",
+        "definition": "Company growth by profit",
+        "nametemplateMetaID": "16",
+        "nametemplate": "FALSE",
+        "definitiontemplateMetaID": "17",
+        "definitiontemplate": "FALSE",
+        "usecaseMetaID": "15",
+        "usecase": "",
+        "usecasetemplateMetaID": "18",
+        "usecasetemplate": "FALSE",
+        "alertvalueMetaID": "",
+        "alertvalue": "8",
+        "workbookobjectidMetaID": "",
+        "workbookobjectid": "7",
+        "borderColor":"lightgray"
+        },
+        {
+        "category": "details",
+        "textMetaID": "21",
+        "shapeTitle": "Customer Satisfaction",
+        "shapeDetails": "Data is considered here",
+        "shapeColor": "#ee9696",
+        "detailsColor":"white",
+        "key": 7,
+        "loc": "301.89531453209617 187.9873046875",
+        "namebuttonlabel": "Definition",
+        "usecasebuttonlabel": "Use Case",
+        "Status Label": "Active",
+        "statusid": "13",
+        "definitionMetaID": "22",
+        "definition": "Measure Customer Retention",
+        "nametemplateMetaID": "24",
+        "nametemplate": "FALSE",
+        "definitiontemplateMetaID": "25",
+        "definitiontemplate": "FALSE",
+        "usecaseMetaID": "23",
+        "usecase": "Use Case of Customer Retention",
+        "usecasetemplateMetaID": "26",
+        "usecasetemplate": "FALSE",
+        "alertvalueMetaID": "",
+        "alertvalue": "2",
+        "workbookobjectidMetaID": "",
+        "workbookobjectid": "8",
+        "borderColor":"lightgray"
+        },
+        {
+        "category": "Circle",
+        "textMetaID": "29",
+        "text": "no",
+        "color": "lightgray",
+        "key":8,
+        "loc": "19.110479310501624 290.4873046875",
+        "namebuttonlabel": "",
+        "usecasebuttonlabel": "",
+        "Status Label": "Active",
+        "statusid": "13",
+        "definitionMetaID": "",
+        "definition": "",
+        "nametemplateMetaID": "",
+        "nametemplate": "",
+        "definitiontemplateMetaID": "",
+        "definitiontemplate": "",
+        "usecaseMetaID": "",
+        "usecase": "",
+        "usecasetemplateMetaID": "",
+        "usecasetemplate": "",
+        "alertvalueMetaID": "",
+        "alertvalue": "0",
+        "workbookobjectidMetaID": "",
+        "workbookobjectid": "9"
+        },
+        {
+        "category": "Circle",
+        "textMetaID": "30",
+        "text": "no",
+        "color": "lightgray",
+        "key":9,
+        "loc": "166.54407306050143 290.4873046874999",
+        "namebuttonlabel": "",
+        "usecasebuttonlabel": "",
+        "Status Label": "Active",
+        "statusid": "13",
+        "definitionMetaID": "",
+        "definition": "",
+        "nametemplateMetaID": "",
+        "nametemplate": "",
+        "definitiontemplateMetaID": "",
+        "definitiontemplate": "",
+        "usecaseMetaID": "",
+        "usecase": "",
+        "usecasetemplateMetaID": "",
+        "usecasetemplate": "",
+        "alertvalueMetaID": "",
+        "alertvalue": "0",
+        "workbookobjectidMetaID": "",
+        "workbookobjectid": "10"
+        },
+        {
+        "category": "Circle",
+        "textMetaID": "31",
+        "text": "no",
+        "color": "lightgray",
+        "key": 10,
+        "loc": "313.9776668105013 290.48730468749994",
+        "namebuttonlabel": "",
+        "usecasebuttonlabel": "",
+        "Status Label": "Active",
+        "statusid": "13",
+        "definitionMetaID": "",
+        "definition": "",
+        "nametemplateMetaID": "",
+        "nametemplate": "",
+        "definitiontemplateMetaID": "",
+        "definitiontemplate": "",
+        "usecaseMetaID": "",
+        "usecase": "",
+        "usecasetemplateMetaID": "",
+        "usecasetemplate": "",
+        "alertvalueMetaID": "",
+        "alertvalue": "0",
+        "workbookobjectidMetaID": "",
+        "workbookobjectid": "11"
+        },
+        {
+        "category": "details",
+        "textMetaID": "32",
+        "shapeTitle": "Relationship NPS",
+        "shapeDetails": "Data is considered here",
+        "shapeColor": "lightgreen",
+        "detailsColor":"white",
+        "key": 11,
+        "loc": "7.028127032096137 402.19993981649725",
+        "namebuttonlabel": "Definition",
+        "usecasebuttonlabel": "Use Case",
+        "Status Label": "Active",
+        "statusid": "13",
+        "definitionMetaID": "33",
+        "definition": "Example Get Customer Signoff",
+        "nametemplateMetaID": "35",
+        "nametemplate": "FALSE",
+        "definitiontemplateMetaID": "36",
+        "definitiontemplate": "FALSE",
+        "usecaseMetaID": "34",
+        "usecase": "Use Case of Relationship NPS",
+        "usecasetemplateMetaID": "37",
+        "usecasetemplate": "FALSE",
+        "alertvalueMetaID": "",
+        "alertvalue": "4",
+        "workbookobjectidMetaID": "",
+        "workbookobjectid": "12",
+        "borderColor":"lightgray"
+        },
+        {
+        "category": "details",
+        "textMetaID": "38",
+        "shapeTitle": "Customer Signoff",
+        "shapeDetails": "Data is considered here",
+        "shapeColor": "lightgreen",
+        "detailsColor":"white",
+        "color": "lightgray",
+        "key":12,
+        "loc": "154.46172078209605 402.199939816497",
+        "namebuttonlabel": "Definition",
+        "usecasebuttonlabel": "Use Case",
+        "Status Label": "Active",
+        "statusid": "13",
+        "definitionMetaID": "40",
+        "definition": "Total Flex Consumption",
+        "nametemplateMetaID": "42",
+        "nametemplate": "FALSE",
+        "definitiontemplateMetaID": "43",
+        "definitiontemplate": "FALSE",
+        "usecaseMetaID": "41",
+        "usecase": "Use Case of Customer Signoff",
+        "usecasetemplateMetaID": "44",
+        "usecasetemplate": "FALSE",
+        "alertvalueMetaID": "",
+        "alertvalue": "0",
+        "workbookobjectidMetaID": "",
+        "workbookobjectid": "13",
+        "borderColor":"lightgray"
+        },
+        {
+        "category": "details",
+        "textMetaID": "46",
+        "shapeTitle": "Proactive NPS",
+        "shapeDetails": "Data is considered here",
+        "shapeColor": "lightgreen",
+        "detailsColor":"white",
+        "key":13,
+        "loc": "301.89531453209594 402.19993981649736",
+        "namebuttonlabel": "Definition",
+        "usecasebuttonlabel": "Use Case",
+        "Status Label": "Active",
+        "statusid": "13",
+        "definitionMetaID": "47",
+        "definition": "Proactive NPS definiton",
+        "nametemplateMetaID": "49",
+        "nametemplate": "FALSE",
+        "definitiontemplateMetaID": "50",
+        "definitiontemplate": "FALSE",
+        "usecaseMetaID": "48",
+        "usecase": "Use Case of Proactive NPS",
+        "usecasetemplateMetaID": "51",
+        "usecasetemplate": "FALSE",
+        "alertvalueMetaID": "",
+        "alertvalue": "0",
+        "workbookobjectidMetaID": "",
+        "workbookobjectid": "14",
+        "borderColor":"lightgray"
+        },
+        {
+        "category": "details",
+        "textMetaID": "53",
+        "shapeTitle": "Identify Decision Makers",
+        "shapeDetails": "Data is considered here",
+        "shapeColor": "lightgreen",
+        "detailsColor":"white",
+        "color": "lightgray",
+        "key": 14,
+        "loc": "7.028127032096023 504.69993981649714",
+        "namebuttonlabel": "Definition",
+        "usecasebuttonlabel": "Use Case",
+        "Status Label": "Active",
+        "statusid": "13",
+        "definitionMetaID": "54",
+        "definition": "Which top accounts don't have decision makters",
+        "nametemplateMetaID": "56",
+        "nametemplate": "FALSE",
+        "definitiontemplateMetaID": "57",
+        "definitiontemplate": "FALSE",
+        "usecaseMetaID": "55",
+        "usecase": "Use Case of Identify Decision Makers",
+        "usecasetemplateMetaID": "58",
+        "usecasetemplate": "FALSE",
+        "alertvalueMetaID": "",
+        "alertvalue": "0",
+        "workbookobjectidMetaID": "",
+        "workbookobjectid": "15",
+        "borderColor":"lightgray"
+        }
+        ],
+        [
+          { from: 1, to: 2 },{ from: 1, to: 3 },{ from: 1, to: 4},
+          { from: 2, to: 5},{ from: 3, to: 6},{ from: 4, to: 7},
+          { from: 5, to: 8},{ from: 6, to: 9},{ from: 7, to: 10},
+          { from: 8, to: 11},{ from: 8, to: 12},
+          { from: 10, to: 13},
+          {from:11,to:14}
+        ]);
+
+
     myDiagram.findNodeForKey(4).isSelected = true;
   }
   function load() {
